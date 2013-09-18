@@ -1,11 +1,12 @@
 require 'logger'
+require 'uri'
 
 module Rack
   class Cors
     def initialize(app, opts={}, &block)
       @app = app
       @logger = opts[:logger]
-      @debug_mode = !!opts[:debug]
+      @debug_mode = true #!!opts[:debug]
 
       if block_given?
         if block.arity == 1
@@ -27,6 +28,19 @@ module Rack
     end
 
     def call(env)
+      # Safari will pass 'null' on redirects, even though an origin should be set
+      # if env['HTTP_ORIGIN'] == 'null'
+      #   # If this is the case, try using the referer header
+      #   if referer = env['HTTP_REFERER']
+      #     # Sanitize the referer to only include the protocol and host
+      #     uri = URI.parse(referer)
+      #     env['HTTP_ORIGIN'] = uri.scheme + '://' + uri.host + (uri.port != uri.default_port ? ":#{uri.port}" : '')
+      #   else
+      #     # Otherwise, fallback to the original behavior and use File, as it's probably somebody
+      #     # trying to load content from their local machine.
+      #     env['HTTP_ORIGIN'] = 'file://'
+      #   end
+      # end
       env['HTTP_ORIGIN'] = 'file://' if env['HTTP_ORIGIN'] == 'null'
       env['HTTP_ORIGIN'] ||= env['HTTP_X_ORIGIN']
 
@@ -70,7 +84,7 @@ module Rack
           logger = @logger || env['rack.logger'] || begin
             @logger = ::Logger.new(STDOUT).tap {|logger| logger.level = ::Logger::Severity::INFO}
           end
-          logger.debug(message, &block)
+          logger.warn(message, &block)
         end
       end
 
@@ -188,7 +202,7 @@ module Rack
 
           def origin_for_response_header(origin)
             return '*' if public_resource? && !credentials
-            origin == 'file://' ? 'null' : origin
+            origin == 'file://' ? '*' : origin
           end
 
           def to_preflight_headers(env)

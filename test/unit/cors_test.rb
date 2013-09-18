@@ -43,6 +43,13 @@ class CorsTest < Test::Unit::TestCase
     assert_cors_success
   end
 
+  should 'support fallback to simplified referer header if available' do
+    header 'Referer', 'http://localhost:3000/test/with/path'
+    header 'Origin', 'null'
+    get '/'
+    assert_cors_success
+  end
+
   should 'support expose header configuration' do
     cors_request '/expose_single_header'
     assert_equal 'expose-test', last_response.headers['Access-Control-Expose-Headers']
