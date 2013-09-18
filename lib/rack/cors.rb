@@ -6,7 +6,7 @@ module Rack
     def initialize(app, opts={}, &block)
       @app = app
       @logger = opts[:logger]
-      @debug_mode = true #!!opts[:debug]
+      @debug_mode = !!opts[:debug]
 
       if block_given?
         if block.arity == 1
@@ -84,7 +84,7 @@ module Rack
           logger = @logger || env['rack.logger'] || begin
             @logger = ::Logger.new(STDOUT).tap {|logger| logger.level = ::Logger::Severity::INFO}
           end
-          logger.warn(message, &block)
+          logger.debug(message, &block)
         end
       end
 
